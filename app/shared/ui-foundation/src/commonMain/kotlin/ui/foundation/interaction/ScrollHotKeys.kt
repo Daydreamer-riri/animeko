@@ -19,6 +19,10 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import kotlinx.coroutines.launch
 
+/**
+ * Handles keyboard directional keys to select items in a list.
+ * Works with D-pad navigation on Android TV remote controls.
+ */
 fun Modifier.keyboardDirectionToSelectItem(
     selectedItemIndex: () -> Int,
     onSelect: suspend (Int) -> Unit,

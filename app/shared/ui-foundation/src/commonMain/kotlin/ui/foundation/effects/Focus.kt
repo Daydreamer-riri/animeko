@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 
 /**
  * Moves focus to the next component when the [Key.Tab] or [Key.Enter] key is pressed.
+ * Also works with D-pad navigation on Android TV remote controls.
  */
 fun Modifier.moveFocusOnEnter(
     direction: FocusDirection = FocusDirection.Down
@@ -53,6 +54,23 @@ fun Modifier.defaultFocus(
 }
 
 typealias ComposeKey = Key
+
+/**
+ * Handles D-pad center button press (OK/Select button on TV remote).
+ * This is useful for making clickable elements work with TV remote controls.
+ */
+fun Modifier.onDPadCenter(
+    onSelect: () -> Unit
+): Modifier = onPreviewKeyEvent { keyEvent ->
+    if (keyEvent.type == KeyEventType.KeyDown && (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter)) {
+        true // Consume event to prevent it from being handled by other components
+    } else if (keyEvent.type == KeyEventType.KeyUp && (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter)) {
+        onSelect()
+        true
+    } else {
+        false
+    }
+}
 
 /**
  * Handles key event.
