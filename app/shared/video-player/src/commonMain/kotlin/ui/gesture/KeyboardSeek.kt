@@ -25,7 +25,10 @@ class KeyboardHorizontalDirectionState(
     val onForward: () -> Unit,
 )
 
-
+/**
+ * Handles keyboard horizontal direction keys (Left/Right) for video seeking.
+ * Works with D-pad navigation on Android TV remote controls.
+ */
 fun Modifier.onKeyboardHorizontalDirection(
     state: KeyboardHorizontalDirectionState,
 ): Modifier = onKeyboardHorizontalDirection(
@@ -33,6 +36,10 @@ fun Modifier.onKeyboardHorizontalDirection(
     onForward = state.onForward,
 )
 
+/**
+ * Handles keyboard horizontal direction keys (Left/Right) for video seeking.
+ * Works with D-pad navigation on Android TV remote controls.
+ */
 fun Modifier.onKeyboardHorizontalDirection(
     onBackward: () -> Unit,
     onForward: () -> Unit,

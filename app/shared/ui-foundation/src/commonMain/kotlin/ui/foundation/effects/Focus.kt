@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 
 /**
  * Moves focus to the next component when the [Key.Tab] or [Key.Enter] key is pressed.
+ * Also works with D-pad navigation on Android TV remote controls.
  */
 fun Modifier.moveFocusOnEnter(
     direction: FocusDirection = FocusDirection.Down
