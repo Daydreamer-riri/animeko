@@ -19,6 +19,7 @@
 package me.him188.ani.app.platform
 
 import android.net.Uri
+import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +43,22 @@ import java.util.concurrent.ConcurrentLinkedQueue
 abstract class BaseComponentActivity : AppCompatActivity() {
     @Stable
     val snackbarHostState = SnackbarHostState()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Enable edge-to-edge globally for all activities
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
 
     private val requestPermissionHandlers: MutableCollection<(Boolean) -> Unit> = ConcurrentLinkedQueue()
     private val requestPermissionLauncher =
@@ -88,17 +105,6 @@ abstract class BaseComponentActivity : AppCompatActivity() {
         } finally {
             requestExternalDocumentTreeHandler.compareAndSet(handler, null)
         }
-    }
-
-    fun enableDrawingToSystemBars() {
-        enableEdgeToEdge(
-            SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
-            ),
-        )
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 }
 

@@ -1,0 +1,140 @@
+name: 'Build Android arm64-v8a Debug'
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - '.idea/**'
+      - '.junie/**'
+      - '.readme/**'
+      - '.run/**'
+      - 'scripts/*'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '.idea/**'
+      - '.junie/**'
+      - '.readme/**'
+      - '.run/**'
+      - 'scripts/*'
+
+concurrency:
+  group: 'build-arm64-debug-${{ github.event_name }}-${{ github.ref_name == ''main'' && github.run_id || github.ref_name }}'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 'Build Android arm64-v8a Debug'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Free space for Ubuntu
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          android: 'false'
+          large-packages: 'false'
+          tool-cache: 'false'
+      
+      - name: Enable Swap
+        run: |
+          sudo fallocate -l 10G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+      
+      - name: Delete local.properties
+        continue-on-error: true
+        run: rm local.properties
+      
+      - name: Write local.properties
+        continue-on-error: true
+        run: |
+          echo "ani.dandanplay.app.id=${{ secrets.DANDANPLAY_APP_ID }}" >> local.properties
+          echo "ani.dandanplay.app.secret=${{ secrets.DANDANPLAY_APP_SECRET }}" >> local.properties
+          echo "ani.sentry.dsn=${{ secrets.SENTRY_DSN }}" >> local.properties
+          echo "kotlin.native.ignoreDisabledTargets=true" >> local.properties
+      
+      - name: Write Firebase config
+        continue-on-error: true
+        if: ${{ (github.repository == 'open-ani/animeko') && (github.event_name != 'pull_request') }}
+        run: |
+          echo "ani.enable.firebase=true" >> local.properties
+          echo "firebase.ga.app.id=${{ secrets.FIREBASE_GA_APP_ID }}" >> local.properties
+          echo "firebase.ga.api.secret=${{ secrets.FIREBASE_GA_API_SECRET }}" >> local.properties
+      
+      - name: Get JBR
+        env:
+          RUNNER_TOOL_CACHE: ${{ runner.tool_cache }}
+          JBR_URL: 'https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk_jcef-21.0.5-linux-x64-b750.29.tar.gz'
+          JBR_CHECKSUM_URL: 'https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk_jcef-21.0.5-linux-x64-b750.29.tar.gz.checksum'
+        shell: bash
+        run: python .github/workflows/download_jbr.py
+        id: get_jbr
+      
+      - name: Setup JBR 21
+        uses: gmitch215/setup-java@6d2c5e1f82f180ae79f799f0ed6e3e5efb4e664d
+        with:
+          java-version: '21'
+          distribution: 'jdkfile'
+          jdkFile: ${{ steps.get_jbr.outputs.jbrLocation }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Dump Local Properties
+        run: echo "jvm.toolchain.version=21" >> local.properties
+      
+      - name: Set permissions
+        run: chmod -R 777 .
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-disabled: true
+      
+      - name: Download dependencies
+        continue-on-error: true
+        timeout-minutes: 180
+        run: ./gradlew --scan --stacktrace -Porg.gradle.daemon.idletimeout=60000 -Dfile.encoding=UTF-8 -Dorg.gradle.jvmargs=-Xmx8g -Dkotlin.daemon.jvm.options=-Xmx6g -Pani.android.abis=arm64-v8a
+      
+      - name: Update dev version name
+        continue-on-error: true
+        timeout-minutes: 180
+        run: ./gradlew updateDevVersionNameFromGit --no-configuration-cache --scan -Porg.gradle.daemon.idletimeout=60000 -Dfile.encoding=UTF-8 -Dorg.gradle.jvmargs=-Xmx8g -Dkotlin.daemon.jvm.options=-Xmx6g -Pani.android.abis=arm64-v8a
+      
+      - name: Prepare google-services.json
+        continue-on-error: true
+        if: ${{ (github.repository == 'open-ani/animeko') && (github.event_name != 'pull_request') }}
+        uses: timheuer/base64-to-file@v1.1
+        with:
+          fileName: 'google-services.json'
+          fileDir: './app/android'
+          encodedString: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      
+      - name: Compile Kotlin
+        continue-on-error: true
+        timeout-minutes: 180
+        run: ./gradlew compileKotlin compileCommonMainKotlinMetadata compileJvmMainKotlinMetadata compileKotlinDesktop compileKotlinMetadata --scan -Porg.gradle.daemon.idletimeout=60000 -Dfile.encoding=UTF-8 -Dorg.gradle.jvmargs=-Xmx8g -Dkotlin.daemon.jvm.options=-Xmx6g -Pani.android.abis=arm64-v8a
+      
+      - name: Compile Kotlin Android
+        continue-on-error: true
+        timeout-minutes: 180
+        run: ./gradlew compileDebugKotlinAndroid --scan -Porg.gradle.daemon.idletimeout=60000 -Dfile.encoding=UTF-8 -Dorg.gradle.jvmargs=-Xmx8g -Dkotlin.daemon.jvm.options=-Xmx6g -Pani.android.abis=arm64-v8a
+      
+      - name: Build Android Debug APK (arm64-v8a)
+        timeout-minutes: 180
+        run: ./gradlew assembleDebug --scan -Porg.gradle.daemon.idletimeout=60000 -Dfile.encoding=UTF-8 -Dorg.gradle.jvmargs=-Xmx8g -Dkotlin.daemon.jvm.options=-Xmx6g -Pani.android.abis=arm64-v8a
+      
+      - name: Upload Android Debug APK (arm64-v8a)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ani-android-arm64-v8a-debug
+          path: app/android/build/outputs/apk/debug/android-arm64-v8a-debug.apk
+          if-no-files-found: error
+          overwrite: true
