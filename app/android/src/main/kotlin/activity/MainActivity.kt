@@ -12,14 +12,11 @@ package me.him188.ani.android.activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.core.os.LocaleListCompat
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
@@ -78,22 +75,6 @@ class MainActivity : AniComponentActivity() {
         super.onCreate(savedInstanceState)
         applyLanguage()
         handleStartIntent(intent)
-
-        enableEdgeToEdge(
-            // 透明状态栏
-            statusBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
-            ),
-            // 透明导航栏
-            navigationBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
-            ),
-        )
-
-        // 允许画到 system bars
-        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val toaster = object : Toaster {
             override fun toast(text: String) {
